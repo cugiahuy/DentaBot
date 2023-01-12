@@ -1,16 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// const { ActivityHandler, MessageFactory } = require('botbuilder');
-const { ActivityHandler, ActivityTypes, ConsoleTranscriptLogger } = require('botbuilder');
-// const { QnAMaker } = require('botbuilder-ai');
-const DentistScheduler = require('./dentistscheduler');
-const IntentRecognizer = require('./intentrecognizer');
-const TestLuis = require('./testhttp.js');
+const { ActivityHandler, ActivityTypes } = require('botbuilder');
 const { CustomQuestionAnswering } = require('botbuilder-ai');
 
-class DentaBot extends ActivityHandler {
-    constructor(configuration) {
+class CustomQABot extends ActivityHandler {
+    constructor() {
         super();
 
         try {
@@ -23,33 +18,13 @@ class DentaBot extends ActivityHandler {
             console.warn(`QnAMaker Exception: ${ err } Check your QnAMaker configuration in .env`);
         }
 
-
-        // // create a LUIS connector
-        // try {
-        //     this.intentRecognizer = new FlightBookingRecognizer({
-        //         applicationId: process.env.LuisAppId,
-        //         endpointKey: process.env.LuisAPIKey,
-        //         endpoint: process.env.LuisAPIHostName,
-        //     });
-        //     // console.log(intentRecognizer)
-        // } catch (err) {
-        //     console.warn(`LUIS Exception: ${ err } Check your LUIS configuration in .env`);
-        // }
-        // this.intentRecognizer = new IntentRecognizer(configuration.LuisConfiguration);
-
-        this.TestLuis_1 = new TestLuis();
-        // console.log(this.TestLuis_1.postData())
-
-        this.DentistScheduler_1 = new DentistScheduler();
-
         // If a new user is added to the conversation, send them a greeting message
         this.onMembersAdded(async (context, next) => {
             const membersAdded = context.activity.membersAdded;
-            const welcomeText = 'Welcome to EV Parking Assistant.  I can help you find a charging station and parking.  You can say "find a charging station" or "find parking" or ask a question about electric vehicle charging';
             for (let cnt = 0; cnt < membersAdded.length; cnt++) {
                 if (membersAdded[cnt].id !== context.activity.recipient.id) {
                     const DefaultWelcomeMessageFromConfig = process.env.DefaultWelcomeMessage;
-                    await context.sendActivity(DefaultWelcomeMessageFromConfig?.length > 0 ? DefaultWelcomeMessageFromConfig : welcomeText);
+                    await context.sendActivity(DefaultWelcomeMessageFromConfig?.length > 0 ? DefaultWelcomeMessageFromConfig : 'Hello and Welcome');
                 }
             }
 
@@ -66,43 +41,11 @@ class DentaBot extends ActivityHandler {
 
                 await context.sendActivity(unconfiguredQnaMessage);
             } else {
-                console.log('Calling CQA and LUIS');
-                console.log(context.activity.text);
+                console.log('Calling CQA');
+
                 const enablePreciseAnswer = process.env.EnablePreciseAnswer === 'true';
                 const displayPreciseAnswerOnly = process.env.DisplayPreciseAnswerOnly === 'true';
                 const response = await this.qnaMaker.getAnswers(context, { enablePreciseAnswer: enablePreciseAnswer });
-                
-                // console.log(testLuis_res.result.prediction);
-
-                // // send user input to LUIS
-                // const LuisResult = await this.intentRecognizer.executeLuisQuery(context);    
-                const LuisResult = await this.TestLuis_1.postData(context.activity.text); 
-
-                // Determine which service to respond with //
-                if (LuisResult.result.prediction.topIntent === "GetAvailability" &&
-                    LuisResult.result.prediction.intents[0].confidenceScore > .6
-                ) {
-                    const getAvai = this.DentistScheduler_1.getAvailability();
-                    // call api with location entity info
-                    const getAvaiRes = "I found an availability at " + getAvai;
-                    console.log(getAvaiRes)
-                    await context.sendActivity(getAvaiRes);
-                    await next();
-                    return;
-                }
-
-                // Determine which service to respond with //
-                if (LuisResult.result.prediction.topIntent === "ScheduleAppointment" &&
-                LuisResult.result.prediction.intents[0].confidenceScore > .6
-                ) {
-                const scheduleApt = this.DentistScheduler_1.scheduleAppointment();
-                // call api with location entity info
-                const scheduleAptRes = "You are schedule at " + scheduleApt;
-                console.log(scheduleAptRes)
-                await context.sendActivity(scheduleAptRes);
-                await next();
-                return;
-                }
 
                 // If an answer was received from CQA, send the answer back to the user.
                 if (response.length > 0) {
@@ -135,4 +78,4 @@ class DentaBot extends ActivityHandler {
     }
 }
 
-module.exports.DentaBot = DentaBot;
+module.exports.CustomQABot = CustomQABot;
