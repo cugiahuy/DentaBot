@@ -26,13 +26,12 @@ jobs:
           npm install
           npm run build --if-present
           npm run test --if-present
-          zip -r DentaBot-app.zip ../DentaBot
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v2
         with:
           name: DentaBot-app
-          path: DentaBot-app.zip
+          path: .
 
   deploy:
     runs-on: ubuntu-latest
@@ -46,9 +45,6 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: DentaBot-app
-      - run: |
-          unzip DentaBot-app.zip
-          rm DentaBot-app.zip
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
