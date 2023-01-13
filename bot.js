@@ -4,7 +4,7 @@
 // const { ActivityHandler, MessageFactory } = require('botbuilder');
 const { ActivityHandler, ActivityTypes, ConsoleTranscriptLogger } = require('botbuilder');
 // const { QnAMaker } = require('botbuilder-ai');
-const DentistScheduler = require('./dentistscheduler');
+const DentistScheduler = require('./dentistscheduler.js');
 const IntentRecognizer = require('./intentrecognizer');
 const TestLuis = require('./testhttp.js');
 const { CustomQuestionAnswering } = require('botbuilder-ai');
@@ -23,20 +23,6 @@ class DentaBot extends ActivityHandler {
             console.warn(`QnAMaker Exception: ${ err } Check your QnAMaker configuration in .env`);
         }
 
-
-        // // create a LUIS connector
-        // try {
-        //     this.intentRecognizer = new FlightBookingRecognizer({
-        //         applicationId: process.env.LuisAppId,
-        //         endpointKey: process.env.LuisAPIKey,
-        //         endpoint: process.env.LuisAPIHostName,
-        //     });
-        //     // console.log(intentRecognizer)
-        // } catch (err) {
-        //     console.warn(`LUIS Exception: ${ err } Check your LUIS configuration in .env`);
-        // }
-        // this.intentRecognizer = new IntentRecognizer(configuration.LuisConfiguration);
-
         this.TestLuis_1 = new TestLuis();
         // console.log(this.TestLuis_1.postData())
 
@@ -45,7 +31,7 @@ class DentaBot extends ActivityHandler {
         // If a new user is added to the conversation, send them a greeting message
         this.onMembersAdded(async (context, next) => {
             const membersAdded = context.activity.membersAdded;
-            const welcomeText = 'Welcome to EV Parking Assistant.  I can help you find a charging station and parking.  You can say "find a charging station" or "find parking" or ask a question about electric vehicle charging';
+            const welcomeText = 'Welcome to Dentist Schedule Assistant.  I can help you find and schedule an appointment.  You can say "What appointments are available?" or "Can I book at 10am?" or ask a question about our service';
             for (let cnt = 0; cnt < membersAdded.length; cnt++) {
                 if (membersAdded[cnt].id !== context.activity.recipient.id) {
                     const DefaultWelcomeMessageFromConfig = process.env.DefaultWelcomeMessage;
@@ -82,10 +68,10 @@ class DentaBot extends ActivityHandler {
                 if (LuisResult.result.prediction.topIntent === "GetAvailability" &&
                     LuisResult.result.prediction.intents[0].confidenceScore > .6
                 ) {
-                    const getAvai = this.DentistScheduler_1.getAvailability();
+                    const getAvai = await this.DentistScheduler_1.getAvailability();
                     // call api with location entity info
                     const getAvaiRes = "I found an availability at " + getAvai;
-                    console.log(getAvaiRes)
+                    // console.log(getAvaiRes)
                     await context.sendActivity(getAvaiRes);
                     await next();
                     return;
@@ -93,9 +79,10 @@ class DentaBot extends ActivityHandler {
 
                 // Determine which service to respond with //
                 if (LuisResult.result.prediction.topIntent === "ScheduleAppointment" &&
-                LuisResult.result.prediction.intents[0].confidenceScore > .6
+                LuisResult.result.prediction.intents[0].confidenceScore > .6 &&
+                LuisResult.result.prediction.entities[0].text != []
                 ) {
-                const scheduleApt = this.DentistScheduler_1.scheduleAppointment();
+                const scheduleApt = await this.DentistScheduler_1.scheduleAppointment(LuisResult.result.prediction.entities[0].text);
                 // call api with location entity info
                 const scheduleAptRes = "You are schedule at " + scheduleApt;
                 console.log(scheduleAptRes)
