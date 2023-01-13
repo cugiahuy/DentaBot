@@ -66,7 +66,7 @@ class DentaBot extends ActivityHandler {
 
                 // Determine which service to respond with //
                 if (LuisResult.result.prediction.topIntent === "GetAvailability" &&
-                    LuisResult.result.prediction.intents[0].confidenceScore > .6
+                    LuisResult.result.prediction.intents[0].confidenceScore > .8
                 ) {
                     const getAvai = await this.DentistScheduler_1.getAvailability();
                     // call api with location entity info
@@ -79,7 +79,7 @@ class DentaBot extends ActivityHandler {
 
                 // Determine which service to respond with //
                 if (LuisResult.result.prediction.topIntent === "ScheduleAppointment" &&
-                LuisResult.result.prediction.intents[0].confidenceScore > .6 &&
+                LuisResult.result.prediction.intents[0].confidenceScore > .8 &&
                 LuisResult.result.prediction.entities[0].text != []
                 ) {
                 const scheduleApt = await this.DentistScheduler_1.scheduleAppointment(LuisResult.result.prediction.entities[0].text);
